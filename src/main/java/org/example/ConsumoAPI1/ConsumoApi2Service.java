@@ -9,7 +9,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
-public class ConsumoApi1Service {
+public class ConsumoApi2Service {
 
     public static void consumoApi() {
         int page = 1;
@@ -18,7 +18,6 @@ public class ConsumoApi1Service {
         double amountDebitMaior = 0;
 
         while (page <= totalPage){
-
             HttpClient client = HttpClient.newHttpClient();
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create("https://jsonmock.hackerrank.com/api/transactions?page="+page))
@@ -27,12 +26,12 @@ public class ConsumoApi1Service {
             try {
                 HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
                 JSONObject json = new JSONObject(response.body());
+
                 if (page == 1) {
                     totalPage = json.getInt("total_pages");
                 }
 
                 JSONArray data = json.getJSONArray("data");
-
                 for (int i=0; i<data.length(); i++){
                     JSONObject dataObject = data.getJSONObject(i);
                     String userName = dataObject.getString("userName");
@@ -40,19 +39,8 @@ public class ConsumoApi1Service {
                         JSONObject location = dataObject.getJSONObject("location");
                         String city = location.getString("city");
                         if (city.equals("Bourg")) {
-                            String txnType = dataObject.getString("txnType");
-                            if (txnType.equals("credit")){
-                                double amount = Double.parseDouble(dataObject.getString("amount").replaceAll("\\$","").replaceAll(",",""));
-                                if (amountCreditMaior < amount) {
-                                    amountCreditMaior = amount;
-                                }
-                            }
-                            if (txnType.equals("debit")){
-                                double amount = Double.parseDouble(dataObject.getString("amount").replaceAll("\\$","").replaceAll(",",""));
-                                if (amountDebitMaior < amount) {
-                                    amountDebitMaior = amount;
-                                }
-                            }
+                            amountCreditMaior = valorMaior(dataObject, "credit", amountCreditMaior);
+                            amountDebitMaior = valorMaior(dataObject, "debit", amountDebitMaior);
                         }
                     }
                 }
@@ -63,5 +51,14 @@ public class ConsumoApi1Service {
         }
         System.out.println(amountCreditMaior);
         System.out.println(amountDebitMaior);
+    }
+
+    public static double valorMaior(JSONObject dataObject, String type, double amountMaior) {
+        String txnType = dataObject.getString("txnType");
+        double amount = Double.parseDouble(dataObject.getString("amount").replaceAll("\\$","").replaceAll(",",""));
+        if (amountMaior < amount && txnType.equals(type)) {
+            amountMaior = amount;
+        }
+        return amountMaior;
     }
 }
